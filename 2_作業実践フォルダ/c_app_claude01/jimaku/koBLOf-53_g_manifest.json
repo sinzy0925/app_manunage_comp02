@@ -1,0 +1,90 @@
+{
+  "url": "https://www.youtube.com/watch?v=koBLOf-53_g",
+  "video_id": "koBLOf-53_g",
+  "lang": "ja",
+  "segment_minutes": 10,
+  "vtt_path": "C:\\Users\\sinzy\\c_app_claude01\\jimaku\\koBLOf-53_g.ja.vtt",
+  "full_text_path": "C:\\Users\\sinzy\\c_app_claude01\\jimaku\\koBLOf-53_g_ja_full.txt",
+  "segment_paths": [
+    "C:\\Users\\sinzy\\c_app_claude01\\jimaku\\segment_00.txt",
+    "C:\\Users\\sinzy\\c_app_claude01\\jimaku\\segment_01.txt",
+    "C:\\Users\\sinzy\\c_app_claude01\\jimaku\\segment_02.txt",
+    "C:\\Users\\sinzy\\c_app_claude01\\jimaku\\segment_03.txt",
+    "C:\\Users\\sinzy\\c_app_claude01\\jimaku\\segment_04.txt",
+    "C:\\Users\\sinzy\\c_app_claude01\\jimaku\\segment_05.txt",
+    "C:\\Users\\sinzy\\c_app_claude01\\jimaku\\segment_06.txt",
+    "C:\\Users\\sinzy\\c_app_claude01\\jimaku\\segment_07.txt"
+  ],
+  "segments": [
+    {
+      "index": 0,
+      "start_sec": 0,
+      "end_sec": 600,
+      "path": "C:\\Users\\sinzy\\c_app_claude01\\jimaku\\segment_00.txt"
+    },
+    {
+      "index": 1,
+      "start_sec": 600,
+      "end_sec": 1200,
+      "path": "C:\\Users\\sinzy\\c_app_claude01\\jimaku\\segment_01.txt"
+    },
+    {
+      "index": 2,
+      "start_sec": 1200,
+      "end_sec": 1800,
+      "path": "C:\\Users\\sinzy\\c_app_claude01\\jimaku\\segment_02.txt"
+    },
+    {
+      "index": 3,
+      "start_sec": 1800,
+      "end_sec": 2400,
+      "path": "C:\\Users\\sinzy\\c_app_claude01\\jimaku\\segment_03.txt"
+    },
+    {
+      "index": 4,
+      "start_sec": 2400,
+      "end_sec": 3000,
+      "path": "C:\\Users\\sinzy\\c_app_claude01\\jimaku\\segment_04.txt"
+    },
+    {
+      "index": 5,
+      "start_sec": 3000,
+      "end_sec": 3600,
+      "path": "C:\\Users\\sinzy\\c_app_claude01\\jimaku\\segment_05.txt"
+    },
+    {
+      "index": 6,
+      "start_sec": 3600,
+      "end_sec": 4200,
+      "path": "C:\\Users\\sinzy\\c_app_claude01\\jimaku\\segment_06.txt"
+    },
+    {
+      "index": 7,
+      "start_sec": 4200,
+      "end_sec": 4292.28,
+      "path": "C:\\Users\\sinzy\\c_app_claude01\\jimaku\\segment_07.txt"
+    }
+  ],
+  "segment_count": 8,
+  "entry_count": 1266,
+  "metadata": {
+    "video_id": "koBLOf-53_g",
+    "title": "プーチンは“目覚めさせてはいけない巨人”を起こした…ウクライナの秘密兵器がすべてを変える",
+    "duration_sec": "4287",
+    "uploader": "軍事の現実"
+  },
+  "processing": {
+    "start_time": "2026-07-16 13:34:15.557",
+    "end_time": "2026-07-16 13:55:03.869"
+  },
+  "cleaning": {
+    "raw_entry_count": 2522,
+    "clean_entry_count": 1266,
+    "raw_char_count": 68240,
+    "joined_char_count": 46727,
+    "clean_char_count": 24296,
+    "entry_reduction_pct": 31.5,
+    "compact_reduction_pct": 48.0,
+    "reduction_pct": 64.4
+  }
+}

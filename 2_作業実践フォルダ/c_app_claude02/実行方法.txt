@@ -1,0 +1,9 @@
+# Step 1: 字幕〜バンドル（enrich 込み）
+python scripts/run_pipeline.py "https://www.youtube.com/watch?v=koBLOf-53_g" --steps fetch,clean,bundle
+
+# Step 2: IDE で要約
+@youtube-jimaku-summary
+jimaku/ の要約前テキストを元に要約して
+
+# Step 3: レポート生成（postprocess 自動適用）
+python scripts/run_pipeline.py --video-id koBLOf-53_g --steps render

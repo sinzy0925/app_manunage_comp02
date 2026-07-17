@@ -1,0 +1,28 @@
+$ C:\Users\sinzy\AppData\Local\Programs\Python\Python312\Scripts\yt-dlp.EXE --no-update --write-auto-subs --write-subs --sub-langs ja --sub-format vtt --skip-download -o youtube_summary_work\_pending\%(id)s https://www.youtube.com/watch?v=koBLOf-53_g
+
+STDOUT:
+[youtube] Extracting URL: https://www.youtube.com/watch?v=koBLOf-53_g
+[youtube] koBLOf-53_g: Downloading webpage
+[youtube] koBLOf-53_g: Downloading android vr player API JSON
+[info] koBLOf-53_g: Downloading subtitles: ja
+[info] koBLOf-53_g: Downloading 1 format(s): 399+251
+[info] Writing video subtitles to: youtube_summary_work\_pending\koBLOf-53_g.ja.vtt
+[download] Destination: youtube_summary_work\_pending\koBLOf-53_g.ja.vtt
+
+[download]    1.00KiB at  Unknown B/s (00:00:00)
+[download]    3.00KiB at  369.49KiB/s (00:00:00)
+[download]    7.00KiB at  752.52KiB/s (00:00:00)
+[download]   15.00KiB at    1.49MiB/s (00:00:00)
+[download]   31.00KiB at    2.92MiB/s (00:00:00)
+[download]   63.00KiB at    4.98MiB/s (00:00:00)
+[download]  127.00KiB at   10.03MiB/s (00:00:00)
+[download]  255.00KiB at    5.92MiB/s (00:00:00)
+[download]  511.00KiB at    5.70MiB/s (00:00:00)
+[download]  588.97KiB at    6.57MiB/s (00:00:00)
+[download] 100% of  588.97KiB in 00:00:00 at 2.55MiB/s
+
+
+STDERR:
+WARNING: [youtube] No supported JavaScript runtime could be found. Only deno is enabled by default; to use another runtime add  --js-runtimes RUNTIME[:PATH]  to your command/config. YouTube extraction without a JS runtime has been deprecated, and some formats may be missing. See  https://github.com/yt-dlp/yt-dlp/wiki/EJS  for details on installing one
+WARNING: The extractor specified to use impersonation for this download, but no impersonate target is available. If you encounter errors, then see  https://github.com/yt-dlp/yt-dlp#impersonation  for information on installing the required dependencies
+

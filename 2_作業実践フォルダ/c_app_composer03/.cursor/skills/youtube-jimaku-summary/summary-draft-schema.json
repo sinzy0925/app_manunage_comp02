@@ -1,0 +1,18 @@
+{
+  "description": "IDEエージェントが jimaku/{video_id}_summary_draft.json に保存する要約ドラフト（一発・詳細寄り）",
+  "required": ["conclusion", "chapter_summary", "segment_summaries"],
+  "properties": {
+    "conclusion": {
+      "type": "string",
+      "description": "全体の結論。箇条書き3〜5点（主張＋主要メカニズム名）。日本語。"
+    },
+    "chapter_summary": {
+      "type": "string",
+      "description": "章立て詳細要約。■ 見出し＋各章箇条書き6〜10本（導入・outline_hints各章・締め）。日本語。圧縮しすぎない。"
+    },
+    "segment_summaries": {
+      "type": "string",
+      "description": "10分単位セグメント要約。各セグメントは --- セグメントNN（時刻範囲）--- の下に箇条書き6〜12本。1段落要約だけで終えない。"
+    }
+  }
+}

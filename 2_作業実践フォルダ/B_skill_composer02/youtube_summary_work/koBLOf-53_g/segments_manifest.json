@@ -1,0 +1,69 @@
+{
+  "segment_count": 8,
+  "segments": [
+    {
+      "index": 0,
+      "file": "C:\\Users\\sinzy\\B_skill02_1\\youtube_summary_work\\koBLOf-53_g\\segments\\seg_00.txt",
+      "start_seconds": 0,
+      "end_seconds": 600,
+      "label": "セグメント00（0:00〜10:00）",
+      "cue_count": 184
+    },
+    {
+      "index": 1,
+      "file": "C:\\Users\\sinzy\\B_skill02_1\\youtube_summary_work\\koBLOf-53_g\\segments\\seg_01.txt",
+      "start_seconds": 600,
+      "end_seconds": 1200,
+      "label": "セグメント01（10:00〜20:00）",
+      "cue_count": 177
+    },
+    {
+      "index": 2,
+      "file": "C:\\Users\\sinzy\\B_skill02_1\\youtube_summary_work\\koBLOf-53_g\\segments\\seg_02.txt",
+      "start_seconds": 1200,
+      "end_seconds": 1800,
+      "label": "セグメント02（20:00〜30:00）",
+      "cue_count": 194
+    },
+    {
+      "index": 3,
+      "file": "C:\\Users\\sinzy\\B_skill02_1\\youtube_summary_work\\koBLOf-53_g\\segments\\seg_03.txt",
+      "start_seconds": 1800,
+      "end_seconds": 2400,
+      "label": "セグメント03（30:00〜40:00）",
+      "cue_count": 178
+    },
+    {
+      "index": 4,
+      "file": "C:\\Users\\sinzy\\B_skill02_1\\youtube_summary_work\\koBLOf-53_g\\segments\\seg_04.txt",
+      "start_seconds": 2400,
+      "end_seconds": 3000,
+      "label": "セグメント04（40:00〜50:00）",
+      "cue_count": 186
+    },
+    {
+      "index": 5,
+      "file": "C:\\Users\\sinzy\\B_skill02_1\\youtube_summary_work\\koBLOf-53_g\\segments\\seg_05.txt",
+      "start_seconds": 3000,
+      "end_seconds": 3600,
+      "label": "セグメント05（50:00〜1:00:00）",
+      "cue_count": 187
+    },
+    {
+      "index": 6,
+      "file": "C:\\Users\\sinzy\\B_skill02_1\\youtube_summary_work\\koBLOf-53_g\\segments\\seg_06.txt",
+      "start_seconds": 3600,
+      "end_seconds": 4200,
+      "label": "セグメント06（1:00:00〜1:10:00）",
+      "cue_count": 162
+    },
+    {
+      "index": 7,
+      "file": "C:\\Users\\sinzy\\B_skill02_1\\youtube_summary_work\\koBLOf-53_g\\segments\\seg_07.txt",
+      "start_seconds": 4200,
+      "end_seconds": 4287.0,
+      "label": "セグメント07（1:10:00〜1:11:27）",
+      "cue_count": 25
+    }
+  ]
+}
