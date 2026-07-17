@@ -1,0 +1,18 @@
+# 既定（.env）: gemini-3.5-flash + thinking_level low
+python scripts/run_pipeline.py "URL" --provider gemini
+
+# 明示指定（同上）
+python scripts/run_pipeline.py "URL" --provider gemini --model gemini-3.5-flash --thinking-level low
+
+# コスト試験（flash-lite）
+python scripts/run_pipeline.py "URL" --provider gemini --model gemini-3.1-flash-lite --thinking-level minimal
+
+# Pass2 検証をスキップ（高速・品質低下）
+python scripts/summarize_gemini.py VIDEO_ID --no-verify
+
+# 段階実行
+python scripts/run_pipeline.py "URL" --steps fetch,clean,bundle
+python scripts/run_pipeline.py --video-id VIDEO_ID --steps summarize,render --provider gemini
+
+# 要約のみスキップ（ドラフト既存）
+python scripts/run_pipeline.py --video-id VIDEO_ID --steps render

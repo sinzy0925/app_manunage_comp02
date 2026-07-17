@@ -1,0 +1,124 @@
+{
+  "video_id": "koBLOf-53_g",
+  "evaluated_at": "2026-07-17",
+  "evaluator": "IDE品質比較（要約比較プロンプト準拠）",
+  "pass_threshold": 9,
+  "app_composer01": {
+    "path": "app_composer01/result/koBLOf-53_g_summary.txt",
+    "mode": "IDE",
+    "model": "Composer2.5",
+    "A": 2,
+    "B": 2,
+    "C": 2,
+    "D": 2,
+    "E": 2,
+    "total": 10,
+    "pass": true
+  },
+  "app_gemini01_flash_lite_v1": {
+    "path": "app_gemini01/result/koBLOf-53_g_summary.txt",
+    "mode": "Gemini API",
+    "model": "gemini-3.1-flash-lite",
+    "thinking_level": "minimal",
+    "pipeline": "改造前",
+    "A": 1,
+    "B": 2,
+    "C": 1,
+    "D": 1,
+    "E": 1,
+    "total": 6,
+    "pass": false
+  },
+  "app_gemini01_flash_lite": {
+    "path": "app_gemini01/result/flash_lite/koBLOf-53_g_summary.txt",
+    "mode": "Gemini API",
+    "model": "gemini-3.1-flash-lite",
+    "thinking_level": "minimal",
+    "pipeline": "Pass2 + must_cover_check + unit_consistency + enrich v4",
+    "A": 1,
+    "B": 2,
+    "C": 2,
+    "D": 1,
+    "E": 2,
+    "total": 8,
+    "pass": false,
+    "notes": [
+      "v2(7点)から+1: 2024年4月2日・817/1379を追加",
+      "1日3人のミサイル（字幕は3発）— unit_consistency誤修正",
+      "メディアゾナ・第64旅団・デルタ件数は依然欠落",
+      "章立てが段落主体で厚み不足"
+    ]
+  },
+  "app_gemini01_flash_lite_v2": {
+    "path": "app_gemini01/result/flash_lite/koBLOf-53_g_summary.txt",
+    "mode": "Gemini API",
+    "model": "gemini-3.1-flash-lite",
+    "thinking_level": "minimal",
+    "pipeline": "Pass2 + unit_consistency + enrich v3",
+    "A": 1,
+    "B": 2,
+    "C": 1,
+    "D": 1,
+    "E": 2,
+    "total": 7,
+    "pass": false,
+    "notes": [
+      "2024年4月2日欠落",
+      "817/1379・メディアゾナ・R280等欠落",
+      "章・セグメントの箇条書き厚み不足",
+      "セグメント00形式は良好"
+    ]
+  },
+  "app_gemini01_v1": {
+    "path": "app_gemini01/result/koBLOf-53_g_summary_35flash.txt",
+    "mode": "Gemini API",
+    "model": "gemini-3.5-flash",
+    "thinking_level": "low",
+    "pipeline": "改造前",
+    "A": 1,
+    "B": 2,
+    "C": 2,
+    "D": 2,
+    "E": 1,
+    "total": 8,
+    "pass": false
+  },
+  "app_gemini01": {
+    "path": "app_gemini01/result/koBLOf-53_g_summary.txt",
+    "mode": "Gemini API",
+    "model": "gemini-3.5-flash",
+    "thinking_level": "low",
+    "pipeline": "Pass2 + must_cover_check + unit_consistency + enrich v4",
+    "A": 2,
+    "B": 2,
+    "C": 2,
+    "D": 2,
+    "E": 2,
+    "total": 10,
+    "pass": true,
+    "notes": [
+      "v2の減点3点（2024年4月2日欠落・300kg・英語断片）を解消",
+      "must_cover 25/25",
+      "1月2日併記は字幕ASR由来（composer要約も同様）"
+    ]
+  },
+  "app_gemini01_v3": {
+    "path": "app_gemini01/result/koBLOf-53_g_summary_35flash.txt",
+    "mode": "Gemini API",
+    "model": "gemini-3.5-flash",
+    "thinking_level": "low",
+    "pipeline": "Pass2 + unit_consistency + enrich v3",
+    "A": 1,
+    "B": 2,
+    "C": 2,
+    "D": 2,
+    "E": 2,
+    "total": 9,
+    "pass": true,
+    "notes": [
+      "ヤラブガ攻撃で2024年4月2日欠落",
+      "「最大射程300kmの積載能力」は射程/積載の混同表現",
+      "817体/1379体・メディアゾナ・セグメント00形式は良好"
+    ]
+  }
+}
