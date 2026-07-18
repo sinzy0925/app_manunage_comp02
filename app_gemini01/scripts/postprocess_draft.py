@@ -17,7 +17,8 @@ from unit_consistency import apply_unit_consistency, build_unit_bindings
 
 META_NOTE_RE = re.compile(r"（セグメント\d+と連続）")
 SEGMENT_HEADER_RE = re.compile(r"---\s*セグメント(\d+)")
-# 自動字幕由来の英語断片（例: 「唯一 of」「the 」）
+# 自動字幕由来の英語断片（例: 「唯一 of」「12 of」「the 」）
+DIGIT_OF_RE = re.compile(r"\d+\s+of\s+", re.IGNORECASE)
 ENGLISH_FRAGMENT_RE = re.compile(
     r"(?<=[\u3040-\u30ff\u4e00-\u9fff])(?:\s+(?:of|the|and|or|in|on|at|to|for|with|by)\s*)(?=[\u3040-\u30ff\u4e00-\u9fff、。]|$)",
     re.IGNORECASE,
@@ -26,6 +27,42 @@ STANDALONE_EN_WORD_RE = re.compile(
     r"(?<=[\u3040-\u30ff\u4e00-\u9fff、])\s+(?:of|the|and|or)\s*(?=[\u3040-\u30ff\u4e00-\u9fff]|$)",
     re.IGNORECASE,
 )
+
+
+def unwrap_draft_payload(data: dict) -> dict:
+    """Pass2 が verify ペイロード形式 {draft, reference} を返した場合に展開。"""
+    result = dict(data)
+    inner = result.get("draft")
+    if isinstance(inner, dict):
+        for key in ("conclusion", "chapter_summary", "segment_summaries"):
+            top = result.get(key)
+            inner_val = inner.get(key)
+            if inner_val in (None, "", []):
+                continue
+            if top in (None, "", []):
+                result[key] = inner_val
+        result.pop("draft", None)
+    result.pop("reference", None)
+    return result
+
+
+def draft_field_text(value: object) -> str:
+    """レンダリング用にドラフトフィールドを文字列化。"""
+    if isinstance(value, str):
+        return value.strip()
+    if isinstance(value, list):
+        if not value:
+            return ""
+        if isinstance(value[0], dict) and "bullets" in value[0]:
+            lines: list[str] = []
+            for item in value:
+                for bullet in item.get("bullets", []):
+                    text = str(bullet).strip()
+                    if text:
+                        lines.append(f"- {text.lstrip('-').strip()}")
+            return "\n".join(lines)
+        return "\n".join(str(x).strip() for x in value if str(x).strip())
+    return str(value or "").strip()
 
 
 def is_segment_items_list(segments: object) -> bool:
@@ -71,6 +108,7 @@ def count_segment_items(segment_summaries: object) -> int:
 
 def _strip_english_fragments(text: str) -> str:
     """日本語文中に紛れた単独英語断片を除去。"""
+    text = DIGIT_OF_RE.sub("", text)
     text = ENGLISH_FRAGMENT_RE.sub("", text)
     text = STANDALONE_EN_WORD_RE.sub("", text)
     # 行末の孤立英単語
@@ -94,7 +132,7 @@ def postprocess_draft(
     expected_segments: int | None = None,
     stringify_segments: bool = True,
 ) -> dict:
-    result = dict(draft)
+    result = unwrap_draft_payload(dict(draft))
     for key in ("conclusion", "chapter_summary"):
         if key in result and isinstance(result[key], str):
             result[key] = _fix_text(result[key])

@@ -66,7 +66,7 @@
     }
   ],
   "segment_count": 8,
-  "entry_count": 1266,
+  "entry_count": 1268,
   "metadata": {
     "video_id": "koBLOf-53_g",
     "title": "プーチンは“目覚めさせてはいけない巨人”を起こした…ウクライナの秘密兵器がすべてを変える",
@@ -74,17 +74,17 @@
     "uploader": "軍事の現実"
   },
   "processing": {
-    "start_time": "2026-07-17 23:01:42.307",
-    "end_time": "2026-07-17 23:58:39.285"
+    "start_time": "2026-07-18 10:58:22.784",
+    "end_time": "2026-07-18 10:59:22.611"
   },
   "cleaning": {
     "raw_entry_count": 2522,
-    "clean_entry_count": 1266,
+    "clean_entry_count": 1268,
     "raw_char_count": 68240,
-    "joined_char_count": 46727,
-    "clean_char_count": 24296,
-    "entry_reduction_pct": 31.5,
+    "joined_char_count": 46787,
+    "clean_char_count": 24345,
+    "entry_reduction_pct": 31.4,
     "compact_reduction_pct": 48.0,
-    "reduction_pct": 64.4
+    "reduction_pct": 64.3
   }
 }

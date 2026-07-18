@@ -12,6 +12,7 @@ TIME_FMT = "%Y-%m-%d %H:%M:%S.%f"
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 JIMaku_DIR = PROJECT_ROOT / "jimaku"
 RESULT_DIR = PROJECT_ROOT / "result"
+LOG_DIR = PROJECT_ROOT / "logs"
 TEMPLATE_PATH = (
     PROJECT_ROOT / ".cursor" / "skills" / "youtube-jimaku-summary" / "summary-template.md"
 )
@@ -73,6 +74,33 @@ def format_segment_label(start_sec: float, end_sec: float) -> str:
 def ensure_dirs() -> None:
     JIMaku_DIR.mkdir(parents=True, exist_ok=True)
     RESULT_DIR.mkdir(parents=True, exist_ok=True)
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+
+_pipeline_log_path: Path | None = None
+
+
+def set_pipeline_log(path: Path | None) -> None:
+    """run_pipeline からログファイルを指定。"""
+    global _pipeline_log_path
+    _pipeline_log_path = path
+    if path:
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+
+def log_progress(message: str) -> None:
+    """作業経過をコンソールとログファイルに出力。"""
+    line = f"[{now_str()}] {message}"
+    print(line, flush=True)
+    if _pipeline_log_path:
+        with _pipeline_log_path.open("a", encoding="utf-8") as fh:
+            fh.write(line + "\n")
+
+
+def make_pipeline_log_path(video_id: str) -> Path:
+    safe_id = video_id or "unknown"
+    stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    return LOG_DIR / f"pipeline_{safe_id}_{stamp}.log"
 
 
 def manifest_path(video_id: str, jimaku_dir: Path | None = None) -> Path:

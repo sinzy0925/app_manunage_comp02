@@ -19,6 +19,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+import common as pipeline_common
 from common import (
     JIMaku_DIR,
     RESULT_DIR,
@@ -26,8 +27,11 @@ from common import (
     elapsed_sec,
     ensure_dirs,
     format_duration,
+    log_progress,
+    make_pipeline_log_path,
     manifest_path,
     now_str,
+    set_pipeline_log,
     update_manifest_processing,
 )
 from clean_subs import clean_subtitles
@@ -75,6 +79,7 @@ def run_pipeline(
     summary_json: Path | None = None,
     provider: str = DEFAULT_PROVIDER,
     video_id: str | None = None,
+    pass1_trials: int = 1,
 ) -> dict:
     ensure_dirs()
     base = jimaku_dir or JIMaku_DIR
@@ -86,8 +91,10 @@ def run_pipeline(
     resolved_id = video_id
 
     if "fetch" in selected:
+        log_progress(f"STEP fetch 開始: {url}")
         manifest = fetch_subtitles(url, base, lang, segment_minutes)
         resolved_id = manifest["video_id"]
+        log_progress(f"STEP fetch 完了: video_id={resolved_id}")
         mpath = manifest_path(resolved_id, base)
         update_manifest_processing(mpath, start_time=start_time)
     else:
@@ -108,15 +115,22 @@ def run_pipeline(
     draft_path = base / f"{resolved_id}_summary_draft.json"
 
     if "clean" in selected:
+        log_progress("STEP clean 開始")
         clean_subtitles(mpath, base)
         manifest = json.loads(mpath.read_text(encoding="utf-8"))
+        log_progress("STEP clean 完了")
 
     bundle: dict | None = None
     if "bundle" in selected:
+        log_progress("STEP bundle 開始")
         bundle = build_ai_bundle(mpath, base)
         bundle_path.write_text(json.dumps(bundle, ensure_ascii=False, indent=2), encoding="utf-8")
+        log_progress(f"STEP bundle 完了: {bundle_path}")
 
     if "summarize" in selected:
+        model_name = model or os.environ.get("GEMINI_MODEL")
+        thinking = thinking_level or os.environ.get("GEMINI_THINKING_LEVEL")
+        log_progress(f"STEP summarize 開始: model={model_name} thinking={thinking}")
         if summary_json:
             draft_path.write_text(summary_json.read_text(encoding="utf-8"), encoding="utf-8")
         else:
@@ -124,14 +138,19 @@ def run_pipeline(
                 bundle = load_bundle(bundle_path) if bundle_path.exists() else build_ai_bundle(mpath, base)
                 if not bundle_path.exists():
                     bundle_path.write_text(json.dumps(bundle, ensure_ascii=False, indent=2), encoding="utf-8")
-            model_name = model or os.environ.get("GEMINI_MODEL")
-            thinking = thinking_level or os.environ.get("GEMINI_THINKING_LEVEL")
-            summary = summarize_bundle_gemini(bundle, model=model_name, thinking_level=thinking)
+            summary = summarize_bundle_gemini(
+                bundle,
+                model=model_name,
+                thinking_level=thinking,
+                pass1_trials=pass1_trials,
+            )
             draft_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
+        log_progress(f"STEP summarize 完了: {draft_path}")
 
     result_path: Path | None = None
 
     if "render" in selected:
+        log_progress("STEP render 開始")
         if not draft_path.exists():
             raise RuntimeError(
                 f"要約ドラフトがありません: {draft_path}\n"
@@ -155,6 +174,7 @@ def run_pipeline(
         update_manifest_processing(mpath, end_time=end_time)
         result_path = render_summary(mpath, draft, start, end_time, output_dir=out_dir)
         manifest = json.loads(mpath.read_text(encoding="utf-8"))
+        log_progress(f"STEP render 完了: {result_path}")
 
     end_time = manifest.get("processing", {}).get("end_time", now_str()) if manifest else now_str()
     start = manifest.get("processing", {}).get("start_time", start_time) if manifest else start_time
@@ -171,6 +191,9 @@ def run_pipeline(
         "draft_path": str(draft_path) if draft_path.exists() else None,
         "result_path": str(result_path) if result_path else None,
         "provider": provider,
+        "log_path": str(pipeline_common._pipeline_log_path)
+        if pipeline_common._pipeline_log_path
+        else None,
     }
 
 
@@ -190,6 +213,12 @@ def main() -> int:
     parser.add_argument("--result-dir", default=str(RESULT_DIR))
     parser.add_argument("--model", help="Gemini モデル名（省略時 GEMINI_MODEL）")
     parser.add_argument("--thinking-level", help="thinking_level（省略時 GEMINI_THINKING_LEVEL）")
+    parser.add_argument(
+        "--pass1-trials",
+        type=int,
+        default=1,
+        help="Pass1 試行回数（2以上で機械スコア最高を採用）",
+    )
     parser.add_argument("--summary-json", type=Path, help="既存の要約 JSON をドラフトとして使う")
     args = parser.parse_args()
 
@@ -200,8 +229,28 @@ def main() -> int:
 
     url = args.url or "https://www.youtube.com/watch?v=PLACEHOLDER"
 
+    video_id_guess = args.video_id
+    if not video_id_guess and args.url and "PLACEHOLDER" not in args.url:
+        from fetch_subs import extract_video_id
+
+        try:
+            video_id_guess = extract_video_id(args.url)
+        except ValueError:
+            video_id_guess = None
+    if not video_id_guess and args.summary_json:
+        video_id_guess = _video_id_from_json(args.summary_json)
+
+    log_path = make_pipeline_log_path(video_id_guess or "run")
+    set_pipeline_log(log_path)
+
     try:
         steps = parse_steps(args.steps, provider=args.provider)
+        model_name = args.model or os.environ.get("GEMINI_MODEL", "")
+        thinking = args.thinking_level or os.environ.get("GEMINI_THINKING_LEVEL", "")
+        log_progress(
+            f"パイプライン開始 steps={','.join(steps)} model={model_name} thinking={thinking}"
+        )
+        log_progress(f"ログファイル: {log_path}")
         result = run_pipeline(
             url,
             lang=args.lang,
@@ -214,11 +263,14 @@ def main() -> int:
             summary_json=args.summary_json,
             provider=args.provider,
             video_id=args.video_id,
+            pass1_trials=args.pass1_trials,
         )
     except Exception as exc:
+        log_progress(f"エラー: {exc}")
         print(str(exc), file=sys.stderr)
         return 1
 
+    log_progress("パイプライン完了")
     print("=" * 60)
     print("処理完了")
     print("=" * 60)
@@ -233,6 +285,8 @@ def main() -> int:
         print(f"AIバンドル  : {result['bundle_path']}")
     if result.get("draft_path"):
         print(f"要約ドラフト: {result['draft_path']}")
+    if result.get("log_path"):
+        print(f"ログ        : {result['log_path']}")
     print("=" * 60)
     return 0
 

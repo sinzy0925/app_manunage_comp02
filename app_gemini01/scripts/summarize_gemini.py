@@ -18,13 +18,15 @@ from build_prompt import (
     build_user_payload_dict,
     build_verify_payload,
 )
-from common import JIMaku_DIR, configure_stdout_utf8
+from common import JIMaku_DIR, configure_stdout_utf8, log_progress
 from gemini_client import create_text_interaction
 from postprocess_draft import (
     count_segment_items,
     is_segment_items_list,
     postprocess_draft,
+    unwrap_draft_payload,
 )
+from draft_audit import audit_draft, score_draft
 from must_cover_check import coverage_summary
 
 SEGMENT_ITEM_SCHEMA: dict[str, Any] = {
@@ -64,7 +66,7 @@ RETRY_SYSTEM_INSTRUCTION = (
 
 def _normalize_draft_shape(draft: dict, bundle: dict | None = None) -> dict:
     """structured output の型ゆれを正規化。segment_summaries は配列のまま保持。"""
-    result = dict(draft)
+    result = unwrap_draft_payload(draft)
 
     conclusion = result.get("conclusion", "")
     if isinstance(conclusion, list):
@@ -189,11 +191,26 @@ def _verify_draft(
     thinking_level: str | None,
 ) -> dict:
     cov = coverage_summary(bundle, draft)
+    pre_audit = audit_draft(bundle, draft)
     payload = build_verify_payload(bundle, draft)
     if cov["missing"]:
         payload["reference"]["_coverage_note"] = (
             f"must_cover {cov['covered']}/{cov['total']} 件カバー。"
             f"missing_must_cover の {len(cov['missing'])} 件を優先追加してください。"
+        )
+    issue_count = sum(
+        len(pre_audit.get(key, []))
+        for key in (
+            "unit_conflicts",
+            "english_fragments",
+            "uncertain_violations",
+            "date_merge_issues",
+            "unsupported_comparisons",
+        )
+    )
+    if issue_count:
+        payload["reference"]["_audit_note"] = (
+            f"機械検出 issue {issue_count} 件。detected_issues を最優先で修正してください。"
         )
     verified = _call_gemini(
         input_payload=payload,
@@ -204,7 +221,46 @@ def _verify_draft(
     )
     verified = _normalize_draft_shape(verified, bundle=bundle)
     verified["_must_cover_coverage"] = coverage_summary(bundle, verified)
+    verified["_pre_pass2_audit"] = pre_audit
     return verified
+
+
+def _run_pass1_with_trials(
+    *,
+    bundle: dict,
+    model: str | None,
+    thinking_level: str | None,
+    pass1_trials: int,
+    expected: int | None,
+) -> dict:
+    """Pass1 を複数回実行し、機械スコア最高のドラフトを返す。"""
+    trials = max(1, pass1_trials)
+    best_draft: dict | None = None
+    best_score = float("-inf")
+
+    for trial in range(trials):
+        draft = _call_summarize(
+            bundle=bundle,
+            model=model,
+            thinking_level=thinking_level,
+            system_instruction=SYSTEM_INSTRUCTION,
+        )
+        draft = postprocess_draft(
+            draft,
+            bundle=bundle,
+            expected_segments=expected,
+            stringify_segments=False,
+        )
+        score = score_draft(bundle, draft)
+        log_progress(f"Pass1 試行 {trial + 1}/{trials} スコア={score:.1f}")
+        if score > best_score:
+            best_score = score
+            best_draft = draft
+
+    assert best_draft is not None
+    best_draft["_pass1_trials"] = trials
+    best_draft["_pass1_best_score"] = round(best_score, 2)
+    return best_draft
 
 
 def summarize_bundle_gemini(
@@ -213,20 +269,40 @@ def summarize_bundle_gemini(
     model: str | None = None,
     thinking_level: str | None = None,
     verify: bool = True,
+    pass1_trials: int = 1,
 ) -> dict:
     expected = int(bundle.get("segment_count", 0)) or None
-    draft = _call_summarize(
-        bundle=bundle,
-        model=model,
-        thinking_level=thinking_level,
-        system_instruction=SYSTEM_INSTRUCTION,
-    )
-    draft = postprocess_draft(
-        draft,
-        bundle=bundle,
-        expected_segments=expected,
-        stringify_segments=False,
-    )
+    trials = pass1_trials
+    env_trials = os.environ.get("PASS1_TRIALS")
+    if env_trials and trials == 1:
+        try:
+            trials = max(1, int(env_trials))
+        except ValueError:
+            pass
+
+    if trials > 1:
+        draft = _run_pass1_with_trials(
+            bundle=bundle,
+            model=model,
+            thinking_level=thinking_level,
+            pass1_trials=trials,
+            expected=expected,
+        )
+        log_progress("Pass1 複数試行完了（最良採用）")
+    else:
+        draft = _call_summarize(
+            bundle=bundle,
+            model=model,
+            thinking_level=thinking_level,
+            system_instruction=SYSTEM_INSTRUCTION,
+        )
+        log_progress("Pass1 要約完了")
+        draft = postprocess_draft(
+            draft,
+            bundle=bundle,
+            expected_segments=expected,
+            stringify_segments=False,
+        )
 
     warnings = draft.get("_warnings", [])
     needs_retry = expected is not None and any("セグメント数不一致" in w for w in warnings)
@@ -255,11 +331,16 @@ def summarize_bundle_gemini(
             )
 
     if verify:
+        log_progress("Pass2 事実検証開始")
         draft = _verify_draft(
             bundle=bundle,
             draft=draft,
             model=model,
             thinking_level=thinking_level,
+        )
+        cov = draft.get("_must_cover_coverage", {})
+        log_progress(
+            f"Pass2 完了 must_cover {cov.get('covered', '?')}/{cov.get('total', '?')}"
         )
 
     draft = postprocess_draft(
@@ -285,6 +366,12 @@ def main() -> int:
     parser.add_argument("--model", default=os.environ.get("GEMINI_MODEL"))
     parser.add_argument("--thinking-level", default=os.environ.get("GEMINI_THINKING_LEVEL"))
     parser.add_argument("--no-verify", action="store_true", help="Pass2 事実検証をスキップ")
+    parser.add_argument(
+        "--pass1-trials",
+        type=int,
+        default=1,
+        help="Pass1 試行回数（2以上で機械スコア最高を採用。環境変数 PASS1_TRIALS でも指定可）",
+    )
     parser.add_argument("--output", help="要約ドラフト JSON 出力先")
     args = parser.parse_args()
 
@@ -307,6 +394,7 @@ def main() -> int:
             model=args.model,
             thinking_level=args.thinking_level,
             verify=not args.no_verify,
+            pass1_trials=args.pass1_trials,
         )
     except Exception as exc:
         print(str(exc), file=sys.stderr)

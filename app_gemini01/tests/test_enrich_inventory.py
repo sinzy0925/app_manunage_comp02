@@ -34,7 +34,22 @@ def test_date_and_range_facts() -> None:
     print("date/range facts ok")
 
 
+def test_date_hints_and_asr_corrections() -> None:
+    bundle = json.loads(FIXTURE.read_text(encoding="utf-8"))
+    enriched = enrich_bundle(bundle)
+    hints = enriched.get("date_hints", [])
+    assert hints, hints
+    seg1 = next(s for s in enriched["segments"] if int(s["index"]) == 1)
+    assert "タタールスタン" in seg1["text"]
+    seg5 = next(s for s in enriched["segments"] if int(s["index"]) == 5)
+    assert "ブロブディ" in seg5["text"]
+    assert any("2024年4月2日" in d for h in hints for d in h.get("full_dates", []))
+    assert any("1月2日" in d for h in hints for d in h.get("partial_dates", []))
+    print("date_hints/asr ok:", hints[0].get("rule", "")[:50])
+
+
 if __name__ == "__main__":
     test_inventory_facts_extracted()
     test_date_and_range_facts()
+    test_date_hints_and_asr_corrections()
     print("enrich inventory 合格")

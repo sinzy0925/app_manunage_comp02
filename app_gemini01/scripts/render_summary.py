@@ -11,6 +11,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from postprocess_draft import draft_field_text
 from common import (
     RESULT_DIR,
     TEMPLATE_PATH,
@@ -45,9 +46,9 @@ def render_summary(
         .replace("{duration}", duration_label)
         .replace("{uploader}", metadata.get("uploader", ""))
         .replace("{vtt_path}", manifest.get("vtt_path", ""))
-        .replace("{conclusion}", summary_draft.get("conclusion", "").strip())
-        .replace("{chapter_summary}", summary_draft.get("chapter_summary", "").strip())
-        .replace("{segment_summaries}", summary_draft.get("segment_summaries", "").strip())
+        .replace("{conclusion}", draft_field_text(summary_draft.get("conclusion", "")))
+        .replace("{chapter_summary}", draft_field_text(summary_draft.get("chapter_summary", "")))
+        .replace("{segment_summaries}", draft_field_text(summary_draft.get("segment_summaries", "")))
         .replace("{start_time}", start_time)
         .replace("{end_time}", end_time)
         .replace("{date}", date.today().isoformat())

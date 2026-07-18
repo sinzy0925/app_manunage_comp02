@@ -11,6 +11,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from asr_corrections import apply_corrections
 from common import JIMaku_DIR, configure_stdout_utf8
 from unit_consistency import normalize_numeric_fact
 
@@ -39,6 +40,7 @@ UNIT_OR_SCALE_RE = re.compile(
 INVENTORY_RE = re.compile(r"(\d{3,4})体の(?:戦車|装甲)")
 PAYLOAD_RANGE_RE = re.compile(r"最大\s*(\d{2,4})\s*km|(\d{2,4})\s*kmまで詰める")
 FULL_DATE_RE = re.compile(r"(\d{4}年\d{1,2}月\d{1,2}日)")
+PARTIAL_DATE_RE = re.compile(r"(\d{1,2}月\d{1,2}日)")
 DATE_LIKE_RE = re.compile(r"(?:\d{4}年|\d{1,2}月)")
 BARE_SMALL_INT_RE = re.compile(r"^\d{1,2}$")
 
@@ -142,7 +144,8 @@ INSTRUCTIONS = """以下の字幕テキストを要約してください。
 - must_cover（あれば）と高信号の numeric_facts（日付・距離・金額・人数・発数・％など）は、章かセグメントのどちらかにほぼすべて織り込む（目安8割以上）
 
 【厳守】
-- 事実は字幕テキストと enrichment（outline_hints / entities_by_segment / numeric_facts / must_cover）に基づくこと
+- 事実は字幕テキストと enrichment（outline_hints / entities_by_segment / numeric_facts / must_cover / date_hints）に基づくこと
+- date_hints があるセグメントでは、完全日付と月日のみの日付は別イベント。同一箇条書きに結合しない
 - 字幕にない年号・数値・固有名詞は推測して書かない（uncertain_spans は「不明」または省略）
 - 別の組織・製品・人物の属性を混同しない（entities_by_segment を参照）
 - 動画内で示された章立て（outline_hints）があれば chapter_summary はそれに従う
@@ -318,6 +321,42 @@ def extract_numeric_facts(text: str, segment_index: int, limit: int = 20) -> lis
     return facts[:limit]
 
 
+def extract_date_hints(segments: list[dict]) -> list[dict]:
+    """同一セグメント内の完全日付と月日のみ日付が共存する場合の混同防止ヒント。"""
+    hints: list[dict] = []
+    for seg in segments:
+        index = int(seg.get("index", 0))
+        text = str(seg.get("text", ""))
+        full_dates = _unique_preserve(FULL_DATE_RE.findall(text))
+        partial_dates: list[str] = []
+        for match in PARTIAL_DATE_RE.finditer(text):
+            value = match.group(1)
+            start = match.start()
+            before = text[max(0, start - 5) : start]
+            if re.search(r"\d{4}年$", before):
+                continue
+            if value not in partial_dates:
+                partial_dates.append(value)
+
+        if not full_dates or not partial_dates:
+            continue
+
+        hints.append(
+            {
+                "segment": index,
+                "full_dates": full_dates,
+                "partial_dates": partial_dates,
+                "rule": (
+                    f"セグメント{index:02d}: "
+                    f"{'・'.join(full_dates)} は地点・文脈導入の日付。"
+                    f"{'・'.join(partial_dates)} は別の攻撃・出来事の日時。"
+                    "同一箇条書きに結合しない。攻撃時刻と場所導入を混同しない。"
+                ),
+            }
+        )
+    return hints
+
+
 def extract_uncertain_spans(text: str, segment_index: int) -> list[dict]:
     spans: list[dict] = []
     for pattern, reason in UNCERTAIN_PATTERNS:
@@ -378,9 +417,13 @@ def enrich_bundle(bundle: dict) -> dict:
     numeric_facts: list[dict] = []
     uncertain_spans: list[dict] = []
 
+    corrected_segments: list[dict] = []
     for seg in bundle.get("segments", []):
         index = int(seg.get("index", 0))
-        text = str(seg.get("text", ""))
+        text = apply_corrections(str(seg.get("text", "")))
+        corrected_seg = dict(seg)
+        corrected_seg["text"] = text
+        corrected_segments.append(corrected_seg)
         entities_by_segment.append(
             {
                 "segment": index,
@@ -391,17 +434,21 @@ def enrich_bundle(bundle: dict) -> dict:
         numeric_facts.extend(extract_numeric_facts(text, index))
         uncertain_spans.extend(extract_uncertain_spans(text, index))
 
+    date_hints = extract_date_hints(corrected_segments)
+
     numeric_facts.sort(key=lambda f: int(f.get("score", 0)), reverse=True)
     numeric_facts = assign_fact_ids(numeric_facts[:80])
     must_cover = build_must_cover(numeric_facts, limit=25)
 
+    enriched["segments"] = corrected_segments
     enriched["outline_hints"] = outline_hints
+    enriched["date_hints"] = date_hints
     enriched["entities_by_segment"] = entities_by_segment
     enriched["numeric_facts"] = numeric_facts
     enriched["must_cover"] = must_cover
     enriched["uncertain_spans"] = uncertain_spans[:30]
     enriched["instructions"] = INSTRUCTIONS
-    enriched["enrichment_version"] = 4
+    enriched["enrichment_version"] = 5
     return enriched
 
 
@@ -430,6 +477,7 @@ def main() -> int:
                 "bundle_path": str(out_path),
                 "outline_hints": enriched.get("outline_hints", []),
                 "must_cover_count": len(enriched.get("must_cover", [])),
+                "date_hints_count": len(enriched.get("date_hints", [])),
                 "uncertain_count": len(enriched.get("uncertain_spans", [])),
                 "enrichment_version": enriched.get("enrichment_version"),
             },
