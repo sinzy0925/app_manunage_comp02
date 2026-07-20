@@ -2,6 +2,9 @@
 
 この作業をする際、仕事丸投げ、スキル活用、アプリ活用でどのような差が出るのかテストを行う
 
+まとめた内容は、以下の記事を参照ください。
+[https://qiita.com/sinzy0925/items/7bfe17702cb31ccc9fed](https://qiita.com/sinzy0925/items/7bfe17702cb31ccc9fed)
+
 ## テストの比較ポイント
 
 1. かかった時間
